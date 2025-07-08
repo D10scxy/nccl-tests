@@ -250,7 +250,7 @@ testResult_t CheckData(struct threadArgs* args, ncclDataType_t type, ncclRedOp_t
 
     TESTCHECK(CheckDelta(data, args->expected[i], count, 0, type, op, 0, nranks, wrongPerGpu+i));
 
-#if 1 && DEBUG_PRINT
+// #if 1 && DEBUG_PRINT
     if (args->reportErrors && wrongPerGpu[i] != 0) {
       printf("rank=%d #wrong=%d\n", rank, (int)wrongPerGpu[i]);
       char *expectedHost = (char*)malloc(args->expectedBytes);
@@ -272,7 +272,7 @@ testResult_t CheckData(struct threadArgs* args, ncclDataType_t type, ncclRedOp_t
       free(expectedHost);
       free(dataHost);
     }
-#endif
+// #endif
   }
 
   *wrongElts = 0;
@@ -342,6 +342,7 @@ testResult_t testStreamSynchronize(int ngpus, cudaStream_t* streams, ncclComm_t*
 }
 
 testResult_t startColl(struct threadArgs* args, ncclDataType_t type, ncclRedOp_t opIndex, int root, int in_place, int iter) {
+  // printf("new round!\n");
   size_t count = args->nbytes / wordSize(type);
 
   // Try to change offset for each iteration so that we avoid cache effects and catch race conditions in ptrExchange
@@ -708,15 +709,15 @@ testResult_t threadLaunch(struct testThread* thread) {
 }
 
 testResult_t AllocateBuffs(void **sendbuff, size_t sendBytes, void **recvbuff, size_t recvBytes, void **expected, size_t nbytes) {
-#if NCCL_VERSION_CODE >= NCCL_VERSION(2,19,0)
-    NCCLCHECK(ncclMemAlloc(sendbuff, nbytes));
-    NCCLCHECK(ncclMemAlloc(recvbuff, nbytes));
-    if (datacheck) NCCLCHECK(ncclMemAlloc(expected, recvBytes));
-#else
+// #if NCCL_VERSION_CODE >= NCCL_VERSION(2,19,0)
+//     NCCLCHECK(ncclMemAlloc(sendbuff, nbytes));
+//     NCCLCHECK(ncclMemAlloc(recvbuff, nbytes));
+//     if (datacheck) NCCLCHECK(ncclMemAlloc(expected, recvBytes));
+// #else
     CUDACHECK(cudaMalloc(sendbuff, nbytes));
     CUDACHECK(cudaMalloc(recvbuff, nbytes));
     if (datacheck) CUDACHECK(cudaMalloc(expected, recvBytes));
-#endif
+// #endif
     return testSuccess;
 }
 
@@ -1238,15 +1239,15 @@ testResult_t run() {
 
   // Free off CUDA allocated memory
   for (int i=0; i<nGpus*nThreads; i++) {
-#if NCCL_VERSION_CODE >= NCCL_VERSION(2,19,0)
-    if (sendbuffs[i]) NCCLCHECK(ncclMemFree((char*)sendbuffs[i]));
-    if (recvbuffs[i]) NCCLCHECK(ncclMemFree((char*)recvbuffs[i]));
-    if (datacheck) NCCLCHECK(ncclMemFree(expected[i]));
-#else
+// #if NCCL_VERSION_CODE >= NCCL_VERSION(2,19,0)
+//     if (sendbuffs[i]) NCCLCHECK(ncclMemFree((char*)sendbuffs[i]));
+//     if (recvbuffs[i]) NCCLCHECK(ncclMemFree((char*)recvbuffs[i]));
+//     if (datacheck) NCCLCHECK(ncclMemFree(expected[i]));
+// #else
     if (sendbuffs[i]) CUDACHECK(cudaFree((char*)sendbuffs[i]));
     if (recvbuffs[i]) CUDACHECK(cudaFree((char*)recvbuffs[i]));
     if (datacheck) CUDACHECK(cudaFree(expected[i]));
-#endif
+// #endif
   }
   CUDACHECK(cudaFreeHost(delta));
 #if NCCL_VERSION_CODE >= NCCL_VERSION(2,19,0)
